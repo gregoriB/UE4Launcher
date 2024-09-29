@@ -199,6 +199,7 @@ function downloadURL(url, options, cb)
         }
         urlOpts.headers = {
             Cookie: request._getWebCookieString(),
+            "User-Agent": "Chrome",
         };
     }
     
@@ -587,7 +588,11 @@ function downloadVaultData(cb)
     function done()
     {
         console.log("Done downloading vault");
-        cb(vault);
+        if (vault.length) {
+            cb(vault);
+        } else {
+            cb(null);
+        }
     }
     
     if (vaultData && vaultData.length) {
@@ -619,15 +624,15 @@ function downloadVaultData(cb)
                 /// Did the user not cancle the update?
                 if (!err || err.message !== "Login window closed unexpectedly") {
                     console.error("Cannot download vault page: " + url)
-                    console.error(err);
-                    if (data) {
+                    if (err) {
+                        console.error(err);
+                    } else if (data) {
                         console.log("DATA:");
                         console.error(data);
                     }
                     ///TODO: Try again?
                 }
-                // This is an exceptional condition, so we cannot return the vault here
-                cb(null);
+                done();
             } else {
                 dlTotal = data.data.paging.total;
                 
@@ -690,6 +695,7 @@ function updateVault(ignoreCache, cb)
             downloadVaultData(function (data)
             {
                 if (data) {
+                    console.log("Setting vault cache")
                     vaultData = data;
                     // Only save a valid object. E.g., if the login was unsuccessful, we want to
                     // re-authenticate on the next run.
